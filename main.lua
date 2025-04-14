@@ -3,9 +3,14 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.Name = "CustomMenu"
 
+-- Ensure ScreenGui is re-parented to PlayerGui after respawn
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+end)
+
 -- Create the Frame (Main Menu)
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 700, 0, 750)
+MainFrame.Size = UDim2.new(0, 700, 0, 850)
 MainFrame.Position = UDim2.new(0.5, -350, 0.5, -375)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.BorderSizePixel = 0
@@ -137,6 +142,55 @@ ESPButton.MouseButton1Click:Connect(function()
     ESPButton.Text = "ESP: " .. (espEnabled and "ON" or "OFF")
 end)
 
+-- Rewrite ESP Functionality
+local espBoxes = {}
+
+local function createESP(player)
+    local box = Drawing.new("Square")
+    box.Thickness = 2
+    box.Color = Color3.fromRGB(255, 0, 0) -- Red box
+    box.Filled = false
+    box.Visible = false
+    espBoxes[player] = box
+end
+
+local function updateESP()
+    for player, box in pairs(espBoxes) do
+        if player ~= game.Players.LocalPlayer and player.Team ~= game.Players.LocalPlayer.Team and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local character = player.Character
+            local rootPart = character.HumanoidRootPart
+            local screenPoint = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
+
+            box.Size = Vector2.new(50, 50) -- Fixed size for simplicity
+            box.Position = Vector2.new(screenPoint.X - 25, screenPoint.Y - 25)
+            box.Visible = espEnabled
+        else
+            box.Visible = false
+        end
+    end
+end
+
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player ~= game.Players.LocalPlayer then
+        createESP(player)
+    end
+end
+
+game.Players.PlayerAdded:Connect(function(player)
+    if player ~= game.Players.LocalPlayer then
+        createESP(player)
+    end
+end)
+
+game.Players.PlayerRemoving:Connect(function(player)
+    if espBoxes[player] then
+        espBoxes[player]:Remove()
+        espBoxes[player] = nil
+    end
+end)
+
+game:GetService("RunService").RenderStepped:Connect(updateESP)
+
 -- Add a Slider for FOV
 local SliderLabel = Instance.new("TextLabel")
 SliderLabel.Size = UDim2.new(0.8, 0, 0.05, 0)
@@ -199,7 +253,7 @@ game:GetService("RunService").RenderStepped:Connect(function()
     fovCircle.Radius = fov
 end)
 
--- Aimbot Functionality
+-- Aimbot Functionality with Team Check
 local holdingAimbotKey = false
 
 game:GetService("UserInputService").InputBegan:Connect(function(input)
@@ -220,7 +274,7 @@ game:GetService("RunService").RenderStepped:Connect(function()
         local shortestDistance = fov
 
         for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if player ~= game.Players.LocalPlayer and player.Team ~= game.Players.LocalPlayer.Team and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                 local character = player.Character
                 local rootPart = character:FindFirstChild("HumanoidRootPart")
                 local screenPoint = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
@@ -239,70 +293,31 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
--- ESP Functionality
-local espEnabled = false
-local espBoxes = {}
+-- Add a Button to Toggle Invisibility
+local InvisibilityButton = Instance.new("TextButton")
+InvisibilityButton.Size = UDim2.new(0.8, 0, 0.1, 0)
+InvisibilityButton.Position = UDim2.new(0.1, 0, 0.95, 0)
+InvisibilityButton.Text = "Invisibility: OFF"
+InvisibilityButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+InvisibilityButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+InvisibilityButton.Parent = MainFrame
 
-local function createESP(player)
-    local box = Drawing.new("Square")
-    box.Thickness = 2
-    box.Color = Color3.fromRGB(0, 255, 0) -- Green box
-    box.Filled = false
-    box.Visible = false
-    espBoxes[player] = box
-end
+local invisible = false
 
-local function updateESP()
-    for player, box in pairs(espBoxes) do
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local rootPart = player.Character.HumanoidRootPart
-            local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(rootPart.Position)
-            if onScreen and espEnabled then
-                box.Size = Vector2.new(50, 50) -- Adjust size as needed
-                box.Position = Vector2.new(screenPoint.X - 25, screenPoint.Y - 25)
-                box.Visible = true
-            else
-                box.Visible = false
+InvisibilityButton.MouseButton1Click:Connect(function()
+    invisible = not invisible
+    InvisibilityButton.Text = "Invisibility: " .. (invisible and "ON" or "OFF")
+    local character = game.Players.LocalPlayer.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = invisible and 1 or 0
             end
-        else
-            box.Visible = false
+            if part:IsA("BasePart") then
+                part.CanCollide = not invisible -- Disable collisions when invisible
+            end
         end
     end
-end
-
-for _, player in pairs(game.Players:GetPlayers()) do
-    if player ~= game.Players.LocalPlayer then
-        createESP(player)
-    end
-end
-
-game.Players.PlayerAdded:Connect(function(player)
-    if player ~= game.Players.LocalPlayer then
-        createESP(player)
-    end
-end)
-
-game.Players.PlayerRemoving:Connect(function(player)
-    if espBoxes[player] then
-        espBoxes[player]:Remove()
-        espBoxes[player] = nil
-    end
-end)
-
-game:GetService("RunService").RenderStepped:Connect(updateESP)
-
--- Add a Button to Toggle ESP
-local ESPButton = Instance.new("TextButton")
-ESPButton.Size = UDim2.new(0.8, 0, 0.1, 0)
-ESPButton.Position = UDim2.new(0.1, 0, 0.55, 0)
-ESPButton.Text = "ESP: OFF"
-ESPButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-ESPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ESPButton.Parent = MainFrame
-
-ESPButton.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    ESPButton.Text = "ESP: " .. (espEnabled and "ON" or "OFF")
 end)
 
 -- Flying Functionality
@@ -425,6 +440,85 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
     end
 end)
 
+-- Add a Button to Toggle Speed
+local SpeedButton = Instance.new("TextButton")
+SpeedButton.Size = UDim2.new(0.8, 0, 0.1, 0)
+SpeedButton.Position = UDim2.new(0.1, 0, 0.7, 0)
+SpeedButton.Text = "Speed: OFF"
+SpeedButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+SpeedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedButton.Parent = MainFrame
+
+local speedEnabled = false
+local speedMultiplier = 1
+
+SpeedButton.MouseButton1Click:Connect(function()
+    speedEnabled = not speedEnabled
+    SpeedButton.Text = "Speed: " .. (speedEnabled and "ON" or "OFF")
+end)
+
+-- Add a Slider for Speed Multiplier
+local SpeedSliderLabel = Instance.new("TextLabel")
+SpeedSliderLabel.Size = UDim2.new(0.8, 0, 0.05, 0)
+SpeedSliderLabel.Position = UDim2.new(0.1, 0, 0.75, 0)
+SpeedSliderLabel.Text = "Speed Multiplier: " .. speedMultiplier
+SpeedSliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedSliderLabel.BackgroundTransparency = 1
+SpeedSliderLabel.Parent = MainFrame
+
+local SpeedSlider = Instance.new("Frame")
+SpeedSlider.Size = UDim2.new(0.8, 0, 0.05, 0)
+SpeedSlider.Position = UDim2.new(0.1, 0, 0.8, 0)
+SpeedSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SpeedSlider.Parent = MainFrame
+
+local SpeedSliderIndicator = Instance.new("Frame")
+SpeedSliderIndicator.Size = UDim2.new(0.1, 0, 1, 0)
+SpeedSliderIndicator.Position = UDim2.new(0.5, 0, 0, 0)
+SpeedSliderIndicator.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+SpeedSliderIndicator.Parent = SpeedSlider
+
+local draggingSpeedSlider = false
+
+SpeedSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingSpeedSlider = true
+    end
+end)
+
+SpeedSlider.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingSpeedSlider = false
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if draggingSpeedSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mouseX = input.Position.X
+        local sliderStart = SpeedSlider.AbsolutePosition.X
+        local sliderWidth = SpeedSlider.AbsoluteSize.X
+        local relativeX = math.clamp((mouseX - sliderStart) / sliderWidth, 0, 1)
+        speedMultiplier = math.floor(1 + (relativeX * 9)) -- Map to range 1-10
+        SpeedSliderIndicator.Position = UDim2.new(relativeX, 0, 0, 0)
+        SpeedSliderLabel.Text = "Speed Multiplier: " .. speedMultiplier
+    end
+end)
+
+-- Apply Speed Multiplier
+game:GetService("RunService").RenderStepped:Connect(function()
+    if speedEnabled then
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = 16 * speedMultiplier -- Default WalkSpeed is 16
+        end
+    else
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = 16 -- Reset to default WalkSpeed
+        end
+    end
+end)
+
 -- Noclip Functionality
 local noclipEnabled = false
 
@@ -453,8 +547,6 @@ game:GetService("RunService").Stepped:Connect(function()
         end
     end
 end)
-
-
 
 --- anti kick script ---
 
