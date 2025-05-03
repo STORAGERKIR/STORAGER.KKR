@@ -1,3 +1,13 @@
+
+--  _  _  _  _  _  _  _  _ 
+-- | || || || || || || || |
+-- |_||_||_||_||_||_||_||_|
+-- |_||_||_||_||_||_||_||_|
+                       
+-- |_||_||_||_||_||_||_||_|
+
+
+
 -- READ ME FIRST PLS
 -- This script is a simple GUI for Roblox that includes features like ESP, Aimbot, Speed, Fly, and Invisibility. 
 -- It is designed to be user-friendly and allows for customization of keybinds and settings.
