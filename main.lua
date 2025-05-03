@@ -1,3 +1,31 @@
+-- READ ME FIRST PLS
+-- This script is a simple GUI for Roblox that includes features like ESP, Aimbot, Speed, Fly, and Invisibility. 
+-- It is designed to be user-friendly and allows for customization of keybinds and settings.
+-- The script also includes an anti-kick feature to prevent the player from being kicked from the game.
+-- Please use responsibly and ensure you are not violating any game rules or terms of service.
+-- This script is for educational purposes only and should not be used for malicious intent.
+-- Enjoy!
+
+
+-- I DO NOT TAKE ANY RESPONSIBILITY FOR ANYTHING THAT HAPPENS TO YOUR ACCOUNT OR DEVICE.
+-- USE AT YOUR OWN RISK.
+-- THIS SCRIPT IS FOR EDUCATIONAL PURPOSES ONLY.
+-- DO NOT USE IT FOR MALICIOUS INTENT.
+-- ENJOY!
+--[[
+    STORAGER.KKR - A Roblox GUI Script
+    Created by Stefanuk12
+    Version: 1.0
+]]
+
+
+
+
+--- I DO NOT CONSENT TO ANYONE RESSELLING THIS SCRIPT OR USING IT FOR MALICIOUS INTENT. --- 
+
+
+
+
 -- Create the ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
